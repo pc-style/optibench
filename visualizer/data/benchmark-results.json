@@ -49,6 +49,18 @@
       "averageCostPerTest": 0.02295596785714286
     },
     {
+      "model": "kimi-k2-thinking",
+      "correct": 126,
+      "incorrect": 84,
+      "errors": 0,
+      "totalTests": 210,
+      "successRate": 60,
+      "errorRate": 0,
+      "averageDuration": 15628,
+      "totalCost": 1.3584575499999996,
+      "averageCostPerTest": 0.006468845476190474
+    },
+    {
       "model": "gemini-2.5-pro",
       "correct": 116,
       "incorrect": 94,
@@ -169,6 +181,18 @@
       "averageCostPerTest": 0.002321808928571429
     },
     {
+      "model": "claude-4.5-sonnet",
+      "correct": 61,
+      "incorrect": 149,
+      "errors": 0,
+      "totalTests": 210,
+      "successRate": 29.04761904761905,
+      "errorRate": 0,
+      "averageDuration": 9617,
+      "totalCost": 0.05938799999999998,
+      "averageCostPerTest": 0.00028279999999999994
+    },
+    {
       "model": "glm-4.5v",
       "correct": 55,
       "incorrect": 155,
@@ -241,6 +265,18 @@
       "averageCostPerTest": 0.00018384285714285713
     },
     {
+      "model": "claude-4-sonnet-non-thinking",
+      "correct": 20,
+      "incorrect": 190,
+      "errors": 0,
+      "totalTests": 210,
+      "successRate": 9.523809523809524,
+      "errorRate": 0,
+      "averageDuration": 7350,
+      "totalCost": 0.04454940000000001,
+      "averageCostPerTest": 0.00021214000000000004
+    },
+    {
       "model": "sonoma-dusk-alpha",
       "correct": 19,
       "incorrect": 191,
@@ -290,16 +326,16 @@
     }
   ],
   "metadata": {
-    "timestamp": "2025-09-06T01:15:19.680Z",
-    "totalModels": 24,
-    "totalTestsRun": 5040,
-    "overallCorrect": 1956,
-    "overallIncorrect": 3084,
+    "timestamp": "2025-11-07T23:58:18.248Z",
+    "totalModels": 27,
+    "totalTestsRun": 5670,
+    "overallCorrect": 2163,
+    "overallIncorrect": 3507,
     "overallErrors": 0,
-    "overallSuccessRate": 38.80952380952381,
+    "overallSuccessRate": 38.148148148148145,
     "overallErrorRate": 0,
-    "totalCost": 10.312245750491947,
-    "averageCostPerTest": 0.0020460805060499893,
+    "totalCost": 11.774640700491931,
+    "averageCostPerTest": 0.002076656208199635,
     "config": {
       "maxConcurrency": 30,
       "testRunsPerModel": 30,

@@ -24,6 +24,11 @@ const defaultProviderOptions = {
 
 export const modelsToRun: RunnableModel[] = [
   {
+    name: "kimi-k2-thinking",
+    llm: openrouter("moonshotai/kimi-k2-thinking", defaultProviderOptions),
+    reasoning: true,
+  },
+  {
     name: "grok-4",
     llm: openrouter("x-ai/grok-4", defaultProviderOptions),
     reasoning: true,
@@ -53,8 +58,18 @@ export const modelsToRun: RunnableModel[] = [
     reasoning: true,
   },
   {
+    name: "claude-4-sonnet-non-thinking",
+    llm: openrouter("anthropic/claude-sonnet-4", defaultProviderOptions),
+    reasoning: false,
+  },
+  {
     name: "claude-4-opus",
     llm: openrouter("anthropic/claude-opus-4", defaultProviderOptions),
+    reasoning: true,
+  },
+  {
+    name: "claude-4.5-sonnet",
+    llm: openrouter("anthropic/claude-sonnet-4.5", defaultProviderOptions),
     reasoning: true,
   },
   {
