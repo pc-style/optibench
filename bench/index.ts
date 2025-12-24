@@ -6,6 +6,7 @@ import {
   TIMEOUT_SECONDS,
   OUTPUT_DIRECTORY,
   STAGGER_DELAY_MS,
+  DRY_RUN_CONFIG,
 } from "./constants";
 import { generateText } from "ai";
 import { mkdir, writeFile, readdir, readFile as fsReadFile } from "fs/promises";
@@ -158,15 +159,17 @@ async function runTest(input: {
   negative_answers?: string[];
   originalTestIndex: number;
   silent?: boolean;
+  timeoutSeconds?: number;
 }) {
-  const { model, system_prompt, prompt, answers, negative_answers, silent } =
+  const { model, system_prompt, prompt, answers, negative_answers, silent, timeoutSeconds } =
     input;
 
+  const timeout = timeoutSeconds ?? TIMEOUT_SECONDS;
   let timeoutId: NodeJS.Timeout | undefined;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(
       () => reject(new Error("Test timeout")),
-      TIMEOUT_SECONDS * 1000
+      timeout * 1000
     );
   });
 
@@ -496,12 +499,21 @@ function generateMarkdownReport(
   return markdown;
 }
 
+export type TestRunnerConfig = {
+  maxConcurrency?: number;
+  testRunsPerModel?: number;
+  timeoutSeconds?: number;
+  staggerDelayMs?: number;
+};
+
 export type TestRunnerOptions = {
   suite: TestSuite;
   suiteFilePath?: string;
   version?: string;
   onEvent?: (event: RunnerEvent) => void;
   silent?: boolean;
+  models?: RunnableModel[];
+  config?: TestRunnerConfig;
 };
 
 async function writeCacheEntry(params: {
@@ -584,7 +596,17 @@ async function writeCacheEntry(params: {
 }
 
 export async function testRunner(options: TestRunnerOptions) {
-  const { suite, suiteFilePath, version, onEvent, silent } = options;
+  const { suite, suiteFilePath, version, onEvent, silent, models, config } = options;
+
+  // use custom models/config or defaults
+  const activeModels = models || modelsToRun;
+  const activeConfig = {
+    maxConcurrency: config?.maxConcurrency ?? MAX_CONCURRENCY,
+    testRunsPerModel: config?.testRunsPerModel ?? TEST_RUNS_PER_MODEL,
+    timeoutSeconds: config?.timeoutSeconds ?? TIMEOUT_SECONDS,
+    staggerDelayMs: config?.staggerDelayMs ?? STAGGER_DELAY_MS,
+  };
+
   const suiteId = computeSuiteId(
     suite.id ||
       (suiteFilePath
@@ -595,11 +617,11 @@ export async function testRunner(options: TestRunnerOptions) {
 
   if (!silent)
     console.log(
-      `Starting test runner for suite "${suite.name}" (id: ${suiteId}) with ${suite.tests.length} tests, ${modelsToRun.length} models, ${TEST_RUNS_PER_MODEL} runs each`
+      `Starting test runner for suite "${suite.name}" (id: ${suiteId}) with ${suite.tests.length} tests, ${activeModels.length} models, ${activeConfig.testRunsPerModel} runs each`
     );
   if (!silent)
     console.log(
-      `Concurrency limit: ${MAX_CONCURRENCY}, Timeout: ${TIMEOUT_SECONDS}s, Version: ${
+      `Concurrency limit: ${activeConfig.maxConcurrency}, Timeout: ${activeConfig.timeoutSeconds}s, Version: ${
         version || "(none)"
       }`
     );
@@ -607,7 +629,7 @@ export async function testRunner(options: TestRunnerOptions) {
   const workQueue: WorkItem[] = [];
 
   suite.tests.forEach((test, testIndex) => {
-    modelsToRun.map((model) => {
+    activeModels.map((model) => {
       workQueue.push({
         model,
         system_prompt: suite.system_prompt,
@@ -661,7 +683,7 @@ export async function testRunner(options: TestRunnerOptions) {
     string,
     { total: number; execute: number; reuse: number }
   > = {};
-  for (const m of modelsToRun)
+  for (const m of activeModels)
     planTotals[m.name] = { total: 0, execute: 0, reuse: 0 };
   const sortedTestIndicesForPlan = Object.keys(itemsByTest)
     .map((k) => parseInt(k))
@@ -677,9 +699,9 @@ export async function testRunner(options: TestRunnerOptions) {
       });
       const prev = previousMap.get(signature) || [];
       const prevForModel = prev.filter((p) => p.model === item.model.name);
-      const reuseCount = Math.min(TEST_RUNS_PER_MODEL, prevForModel.length);
-      const executeCount = TEST_RUNS_PER_MODEL - reuseCount;
-      planTotals[item.model.name].total += TEST_RUNS_PER_MODEL;
+      const reuseCount = Math.min(activeConfig.testRunsPerModel, prevForModel.length);
+      const executeCount = activeConfig.testRunsPerModel - reuseCount;
+      planTotals[item.model.name].total += activeConfig.testRunsPerModel;
       planTotals[item.model.name].reuse += reuseCount;
       planTotals[item.model.name].execute += executeCount;
     }
@@ -772,6 +794,7 @@ export async function testRunner(options: TestRunnerOptions) {
               negative_answers: testRun.negative_answers,
               originalTestIndex: testRun.testIndex,
               silent,
+              timeoutSeconds: activeConfig.timeoutSeconds,
             });
             const duration = Date.now() - startTime;
 
@@ -872,10 +895,10 @@ export async function testRunner(options: TestRunnerOptions) {
       }
     }
 
-    const workerCount = Math.min(MAX_CONCURRENCY, jobQueue.length);
+    const workerCount = Math.min(activeConfig.maxConcurrency, jobQueue.length);
     const workers = Array.from({ length: workerCount }, (_, i) =>
       new Promise<void>((resolve) =>
-        setTimeout(() => resolve(), i * STAGGER_DELAY_MS)
+        setTimeout(() => resolve(), i * activeConfig.staggerDelayMs)
       ).then(() => worker())
     );
 
@@ -903,7 +926,7 @@ export async function testRunner(options: TestRunnerOptions) {
       const prev = previousMap.get(signature) || [];
       const prevForModel = prev.filter((p) => p.model === item.model.name);
 
-      const reuseCount = Math.min(TEST_RUNS_PER_MODEL, prevForModel.length);
+      const reuseCount = Math.min(activeConfig.testRunsPerModel, prevForModel.length);
       for (let i = 1; i <= reuseCount; i++) {
         reuseJobs.push({
           type: "reuse",
@@ -917,7 +940,7 @@ export async function testRunner(options: TestRunnerOptions) {
           reuseFrom: prevForModel[i - 1],
         });
       }
-      for (let i = reuseCount + 1; i <= TEST_RUNS_PER_MODEL; i++) {
+      for (let i = reuseCount + 1; i <= activeConfig.testRunsPerModel; i++) {
         executeJobs.push({
           type: "execute",
           model: item.model,
@@ -1052,7 +1075,7 @@ export async function testRunner(options: TestRunnerOptions) {
     console.log(
       `Scheduling ${executeJobs.length} execution${
         executeJobs.length === 1 ? "" : "s"
-      } across ${suite.tests.length} tests and ${modelsToRun.length} models`
+      } across ${suite.tests.length} tests and ${activeModels.length} models`
     );
 
   await processJobQueue(executeJobs);
@@ -1091,14 +1114,14 @@ export async function testRunner(options: TestRunnerOptions) {
         successful: correct,
         failed: incorrect + errors,
         config: {
-          maxConcurrency: MAX_CONCURRENCY,
-          testRunsPerModel: TEST_RUNS_PER_MODEL,
-          timeoutSeconds: TIMEOUT_SECONDS,
+          maxConcurrency: activeConfig.maxConcurrency,
+          testRunsPerModel: activeConfig.testRunsPerModel,
+          timeoutSeconds: activeConfig.timeoutSeconds,
         },
         testSuite: suite.name,
         suiteId,
         version: version || null,
-        models: modelsToRun.map((m) => m.name),
+        models: activeModels.map((m) => m.name),
       },
       results,
     };
@@ -1211,9 +1234,9 @@ export async function testRunner(options: TestRunnerOptions) {
               results.length
             : 0,
         config: {
-          maxConcurrency: MAX_CONCURRENCY,
-          testRunsPerModel: TEST_RUNS_PER_MODEL,
-          timeoutSeconds: TIMEOUT_SECONDS,
+          maxConcurrency: activeConfig.maxConcurrency,
+          testRunsPerModel: activeConfig.testRunsPerModel,
+          timeoutSeconds: activeConfig.timeoutSeconds,
         },
         testSuite: suite.name,
         suiteId,
