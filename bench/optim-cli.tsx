@@ -244,7 +244,7 @@ const App: React.FC = () => {
             compiled: modelResults.filter((r) => r.compiled).length,
             correct: correct.length,
             avgSpeedup,
-            maxSpeedup: Math.max(0, ...correct.map((r) => r.speedup)),
+            maxSpeedup: correct.length > 0 ? Math.max(...correct.map((r) => r.speedup)) : 0,
             avgTimeMs: modelResults.reduce((sum, r) => sum + r.duration, 0) / modelResults.length,
           };
         }).sort((a, b) => b.avgSpeedup - a.avgSpeedup);
