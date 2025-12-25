@@ -1,6 +1,6 @@
 {
   "name": "compiler-optim-bench",
-  "module": "index.ts",
+  "module": "optim-cli.tsx",
   "type": "module",
   "scripts": {
     "start": "bun --bun run ./optim-cli.tsx",
