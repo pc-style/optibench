@@ -1,11 +1,11 @@
 {
-  "name": "skatebench",
-  "module": "index.ts",
+  "name": "compiler-optim-bench",
+  "module": "optim-cli.tsx",
   "type": "module",
   "scripts": {
-    "start": "bun --bun run ./cli.tsx",
-    "cli": "bun --bun run ./cli.tsx",
-    "run": "bun --bun run ./index.ts",
+    "start": "bun --bun run ./optim-cli.tsx",
+    "optim": "bun --bun run ./optim-cli.tsx",
+    "update-viz": "bun run ./update-visualizer.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

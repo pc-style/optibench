@@ -5,6 +5,14 @@ export const TEST_RUNS_PER_MODEL = 30;
 export const TIMEOUT_SECONDS = 400;
 export const STAGGER_DELAY_MS = 150;
 
+// dry run config - uses free models with fewer runs
+export const DRY_RUN_CONFIG = {
+  maxConcurrency: 5,
+  testRunsPerModel: 3,
+  timeoutSeconds: 120,
+  staggerDelayMs: 500, // slower to avoid rate limits on free tier
+};
+
 import { type LanguageModel } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 
@@ -21,6 +29,54 @@ const defaultProviderOptions = {
     include: true,
   },
 };
+
+// free models for dry runs - no cost, rate limited
+export const freeModels: RunnableModel[] = [
+  {
+    name: "mimo-v2-flash-free",
+    llm: openrouter("xiaomi/mimo-v2-flash:free", defaultProviderOptions),
+  },
+  {
+    name: "kat-coder-pro",
+    llm: openrouter("kwaipilot/kat-coder-pro:free", defaultProviderOptions),
+    reasoning: true,
+  },
+  {
+    name: "nemotron-3-nano-free",
+    llm: openrouter("nvidia/nemotron-3-nano-30b-a3b:free", defaultProviderOptions),
+  },
+  // {
+  //   name: "devstral-free",
+  //   llm: openrouter("mistralai/devstral-2512:free", defaultProviderOptions),
+  // },
+  {
+    name: "devstral-2512",
+    llm: openrouter("mistralai/devstral-2512:free", defaultProviderOptions),
+  },
+];
+
+// google models via direct api key
+import { google } from "@ai-sdk/google";
+
+export const googleModels: RunnableModel[] = [
+  {
+    name: "gemini-2.5-flash",
+    llm: google("gemini-2.5-flash-preview-05-20"),
+  },
+  {
+    name: "gemini-2.5-pro",
+    llm: google("gemini-2.5-pro-preview-06-05"),
+    reasoning: true,
+  },
+  {
+    name: "gemini-2.0-flash",
+    llm: google("gemini-2.0-flash"),
+  },
+  {
+    name: "gemini-2.0-flash-lite",
+    llm: google("gemini-2.0-flash-lite"),
+  },
+];
 
 export const modelsToRun: RunnableModel[] = [
   // Open weight

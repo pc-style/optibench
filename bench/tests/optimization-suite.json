@@ -1,0 +1,101 @@
+{
+  "id": "compiler-optimization",
+  "name": "Compiler Optimization Benchmark",
+  "description": "Tests AI models on their ability to optimize C code for performance",
+  "systemPrompt": "You are an expert C compiler optimization engineer. Your task is to optimize C code for maximum performance while maintaining correctness. Use techniques like loop unrolling, SIMD, cache optimization, algorithmic improvements, and any other applicable optimizations. Return ONLY the optimized C code with no explanations.",
+  "tests": [
+    {
+      "id": "matrix-multiply",
+      "name": "Matrix Multiplication",
+      "description": "Naive O(n³) matrix multiplication - optimize with blocking, cache locality, SIMD",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n\n#define N 256\n\nvoid matrix_multiply(double *A, double *B, double *C) {\n    for (int i = 0; i < N; i++) {\n        for (int j = 0; j < N; j++) {\n            double sum = 0.0;\n            for (int k = 0; k < N; k++) {\n                sum += A[i * N + k] * B[k * N + j];\n            }\n            C[i * N + j] = sum;\n        }\n    }\n}\n\nint main() {\n    double *A = malloc(N * N * sizeof(double));\n    double *B = malloc(N * N * sizeof(double));\n    double *C = malloc(N * N * sizeof(double));\n    \n    for (int i = 0; i < N * N; i++) {\n        A[i] = (double)(i % 100) / 100.0;\n        B[i] = (double)((i * 7) % 100) / 100.0;\n    }\n    \n    matrix_multiply(A, B, C);\n    \n    double checksum = 0.0;\n    for (int i = 0; i < N * N; i++) {\n        checksum += C[i];\n    }\n    \n    printf(\"%.6f\\n\", checksum);\n    \n    free(A); free(B); free(C);\n    return 0;\n}",
+      "expectedOutput": "1677721.600000"
+    },
+    {
+      "id": "bubble-sort",
+      "name": "Sorting Algorithm",
+      "description": "Bubble sort O(n²) - replace with better algorithm",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n\n#define N 10000\n\nvoid bubble_sort(int *arr, int n) {\n    for (int i = 0; i < n - 1; i++) {\n        for (int j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                int temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n}\n\nint main() {\n    int *arr = malloc(N * sizeof(int));\n    \n    unsigned int seed = 12345;\n    for (int i = 0; i < N; i++) {\n        seed = seed * 1103515245 + 12345;\n        arr[i] = (seed >> 16) & 0x7fff;\n    }\n    \n    bubble_sort(arr, N);\n    \n    long long checksum = 0;\n    for (int i = 0; i < N; i++) {\n        checksum += arr[i] * (long long)(i + 1);\n    }\n    \n    printf(\"%lld\\n\", checksum);\n    \n    free(arr);\n    return 0;\n}"
+    },
+    {
+      "id": "fibonacci",
+      "name": "Fibonacci Sequence",
+      "description": "Recursive fibonacci O(2^n) - use memoization or iteration",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n\nlong long fibonacci(int n) {\n    if (n <= 1) return n;\n    return fibonacci(n - 1) + fibonacci(n - 2);\n}\n\nint main() {\n    long long sum = 0;\n    for (int i = 0; i < 40; i++) {\n        sum += fibonacci(i);\n    }\n    printf(\"%lld\\n\", sum);\n    return 0;\n}",
+      "expectedOutput": "267914295"
+    },
+    {
+      "id": "prime-sieve",
+      "name": "Prime Number Sieve",
+      "description": "Trial division - use Sieve of Eratosthenes",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdbool.h>\n\n#define MAX 100000\n\nbool is_prime(int n) {\n    if (n < 2) return false;\n    for (int i = 2; i < n; i++) {\n        if (n % i == 0) return false;\n    }\n    return true;\n}\n\nint main() {\n    int count = 0;\n    long long sum = 0;\n    \n    for (int i = 2; i < MAX; i++) {\n        if (is_prime(i)) {\n            count++;\n            sum += i;\n        }\n    }\n    \n    printf(\"%d %lld\\n\", count, sum);\n    return 0;\n}"
+    },
+    {
+      "id": "string-search",
+      "name": "String Pattern Search",
+      "description": "Naive string search O(nm) - use KMP or Boyer-Moore",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n\n#define TEXT_LEN 1000000\n#define PATTERN \"ABCDABD\"\n\nint naive_search(const char *text, const char *pattern) {\n    int n = strlen(text);\n    int m = strlen(pattern);\n    int count = 0;\n    \n    for (int i = 0; i <= n - m; i++) {\n        int j;\n        for (j = 0; j < m; j++) {\n            if (text[i + j] != pattern[j])\n                break;\n        }\n        if (j == m) count++;\n    }\n    return count;\n}\n\nint main() {\n    char *text = malloc(TEXT_LEN + 1);\n    \n    unsigned int seed = 42;\n    for (int i = 0; i < TEXT_LEN; i++) {\n        seed = seed * 1103515245 + 12345;\n        text[i] = 'A' + ((seed >> 16) % 8);\n    }\n    text[TEXT_LEN] = '\\0';\n    \n    int count = naive_search(text, PATTERN);\n    printf(\"%d\\n\", count);\n    \n    free(text);\n    return 0;\n}"
+    },
+    {
+      "id": "array-sum",
+      "name": "Array Reduction",
+      "description": "Sequential sum - use loop unrolling and SIMD",
+      "benchmarkIterations": 10,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n\n#define N 100000000\n\ndouble array_sum(double *arr, int n) {\n    double sum = 0.0;\n    for (int i = 0; i < n; i++) {\n        sum += arr[i];\n    }\n    return sum;\n}\n\nint main() {\n    double *arr = malloc(N * sizeof(double));\n    \n    for (int i = 0; i < N; i++) {\n        arr[i] = 1.0 / (i + 1);\n    }\n    \n    double result = array_sum(arr, N);\n    printf(\"%.10f\\n\", result);\n    \n    free(arr);\n    return 0;\n}"
+    },
+    {
+      "id": "loop-interchange",
+      "name": "Loop Interchange",
+      "description": "Column-major access pattern - swap loops for row-major cache locality",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n\n#define N 1024\n\nint main() {\n    double *matrix = malloc(N * N * sizeof(double));\n    \n    // init\n    for (int i = 0; i < N * N; i++) {\n        matrix[i] = (double)(i % 1000) / 1000.0;\n    }\n    \n    // bad: column-major access (cache unfriendly)\n    double sum = 0.0;\n    for (int j = 0; j < N; j++) {\n        for (int i = 0; i < N; i++) {\n            sum += matrix[i * N + j];\n        }\n    }\n    \n    printf(\"%.6f\\n\", sum);\n    free(matrix);\n    return 0;\n}"
+    },
+    {
+      "id": "strength-reduction",
+      "name": "Strength Reduction",
+      "description": "Replace expensive operations (div/mod) with cheaper ones",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n\n#define N 100000000\n\nint main() {\n    long long sum = 0;\n    \n    for (int i = 1; i <= N; i++) {\n        // expensive: division and modulo\n        int div_result = i / 7;\n        int mod_result = i % 7;\n        sum += div_result + mod_result;\n    }\n    \n    printf(\"%lld\\n\", sum);\n    return 0;\n}"
+    },
+    {
+      "id": "branch-elimination",
+      "name": "Branch Elimination",
+      "description": "Replace branchy code with branchless alternatives",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n\n#define N 10000000\n\nint main() {\n    int *arr = malloc(N * sizeof(int));\n    \n    unsigned int seed = 42;\n    for (int i = 0; i < N; i++) {\n        seed = seed * 1103515245 + 12345;\n        arr[i] = (seed >> 16) & 0xFF;\n    }\n    \n    long long sum = 0;\n    for (int i = 0; i < N; i++) {\n        // branchy: unpredictable condition\n        if (arr[i] > 128) {\n            sum += arr[i];\n        } else {\n            sum -= arr[i];\n        }\n    }\n    \n    printf(\"%lld\\n\", sum);\n    free(arr);\n    return 0;\n}"
+    },
+    {
+      "id": "memory-pool",
+      "name": "Memory Allocation",
+      "description": "Repeated malloc/free - use memory pooling or stack allocation",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n#define ITERATIONS 100000\n#define SIZE 256\n\nint process_buffer(char *buf, int size) {\n    int sum = 0;\n    for (int i = 0; i < size; i++) {\n        sum += buf[i];\n    }\n    return sum;\n}\n\nint main() {\n    long long total = 0;\n    \n    for (int i = 0; i < ITERATIONS; i++) {\n        char *buffer = malloc(SIZE);\n        memset(buffer, i & 0xFF, SIZE);\n        total += process_buffer(buffer, SIZE);\n        free(buffer);\n    }\n    \n    printf(\"%lld\\n\", total);\n    return 0;\n}"
+    },
+    {
+      "id": "power-function",
+      "name": "Integer Power",
+      "description": "Naive power function - use exponentiation by squaring",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n\nlong long power(long long base, int exp) {\n    long long result = 1;\n    for (int i = 0; i < exp; i++) {\n        result *= base;\n    }\n    return result;\n}\n\nint main() {\n    long long sum = 0;\n    \n    for (int base = 2; base <= 10; base++) {\n        for (int exp = 1; exp <= 30; exp++) {\n            sum += power(base, exp) % 1000000007;\n        }\n    }\n    \n    printf(\"%lld\\n\", sum);\n    return 0;\n}"
+    },
+    {
+      "id": "gcd-naive",
+      "name": "GCD Computation",
+      "description": "Naive GCD with subtraction - use Euclidean algorithm with modulo",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n\nint gcd(int a, int b) {\n    while (a != b) {\n        if (a > b) {\n            a = a - b;\n        } else {\n            b = b - a;\n        }\n    }\n    return a;\n}\n\nint main() {\n    long long sum = 0;\n    \n    for (int i = 1; i <= 10000; i++) {\n        for (int j = 1; j <= 1000; j++) {\n            sum += gcd(i * 17 + 3, j * 13 + 7);\n        }\n    }\n    \n    printf(\"%lld\\n\", sum);\n    return 0;\n}"
+    },
+    {
+      "id": "histogram",
+      "name": "Histogram Computation",
+      "description": "Naive histogram with poor cache usage - optimize memory access pattern",
+      "benchmarkIterations": 5,
+      "code": "#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n#define N 50000000\n#define BINS 256\n\nint main() {\n    unsigned char *data = malloc(N);\n    int *histogram = calloc(BINS, sizeof(int));\n    \n    unsigned int seed = 12345;\n    for (int i = 0; i < N; i++) {\n        seed = seed * 1103515245 + 12345;\n        data[i] = (seed >> 16) & 0xFF;\n    }\n    \n    // naive: one element at a time\n    for (int i = 0; i < N; i++) {\n        histogram[data[i]]++;\n    }\n    \n    long long checksum = 0;\n    for (int i = 0; i < BINS; i++) {\n        checksum += histogram[i] * (long long)(i + 1);\n    }\n    \n    printf(\"%lld\\n\", checksum);\n    \n    free(data);\n    free(histogram);\n    return 0;\n}"
+    }
+  ]
+}
