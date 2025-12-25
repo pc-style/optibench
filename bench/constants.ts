@@ -37,21 +37,21 @@ export const freeModels: RunnableModel[] = [
     llm: openrouter("xiaomi/mimo-v2-flash:free", defaultProviderOptions),
   },
   {
-    name: "olmo-3.1-32b-think-free",
-    llm: openrouter("allenai/olmo-3.1-32b-think:free", defaultProviderOptions),
+    name: "kat-coder-pro",
+    llm: openrouter("kwaipilot/kat-coder-pro:free", defaultProviderOptions),
     reasoning: true,
   },
   {
     name: "nemotron-3-nano-free",
     llm: openrouter("nvidia/nemotron-3-nano-30b-a3b:free", defaultProviderOptions),
   },
+  // {
+  //   name: "devstral-free",
+  //   llm: openrouter("mistralai/devstral-2512:free", defaultProviderOptions),
+  // },
   {
-    name: "devstral-free",
+    name: "devstral-2512",
     llm: openrouter("mistralai/devstral-2512:free", defaultProviderOptions),
-  },
-  {
-    name: "deepseek-v3.1-nex-free",
-    llm: openrouter("nex-agi/deepseek-v3.1-nex-n1:free", defaultProviderOptions),
   },
 ];
 

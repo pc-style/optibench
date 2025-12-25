@@ -1,0 +1,12 @@
+# compiled binaries and work directories
+.optim-work/
+*.o
+*.out
+*_baseline
+*_optimized
+
+# results cache
+results/cache/
+
+# node
+node_modules/

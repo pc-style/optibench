@@ -145,8 +145,12 @@ const App: React.FC = () => {
         }
         setStats(initialStats);
 
-        // run tests sequentially per model (could parallelize later)
-        for (const model of models) {
+        // run models in parallel (up to 3 concurrent)
+        const MAX_CONCURRENT = 3;
+        const modelQueue = [...models];
+        const activePromises: Promise<void>[] = [];
+
+        const runModelTests = async (model: typeof models[0]) => {
           setStats((prev) => ({
             ...prev,
             [model.name]: { ...prev[model.name], running: true },
@@ -187,6 +191,13 @@ const App: React.FC = () => {
               });
             } catch (err) {
               console.error(`Error running ${model.name} on ${test.name}:`, err);
+              setStats((prev) => {
+                const s = prev[model.name];
+                return {
+                  ...prev,
+                  [model.name]: { ...s, testsRun: s.testsRun + 1 },
+                };
+              });
             }
           }
 
@@ -194,6 +205,21 @@ const App: React.FC = () => {
             ...prev,
             [model.name]: { ...prev[model.name], running: false },
           }));
+        };
+
+        // process models with concurrency limit
+        while (modelQueue.length > 0 || activePromises.length > 0) {
+          while (activePromises.length < MAX_CONCURRENT && modelQueue.length > 0) {
+            const model = modelQueue.shift()!;
+            const promise = runModelTests(model).then(() => {
+              const idx = activePromises.indexOf(promise);
+              if (idx > -1) activePromises.splice(idx, 1);
+            });
+            activePromises.push(promise);
+          }
+          if (activePromises.length > 0) {
+            await Promise.race(activePromises);
+          }
         }
 
         // save results

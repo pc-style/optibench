@@ -1,16 +1,23 @@
 #!/usr/bin/env bun
-// copies the latest summary.json to the visualizer data directory
+// copies the latest summary.json and results.json to the visualizer data directory
 
 import { readdir, readFile, writeFile, stat } from "fs/promises";
-import { join } from "path";
+import { join, dirname } from "path";
 
 const RESULTS_DIR = "./results";
 const VISUALIZER_DATA = "../visualizer/data/benchmark-results.json";
+const VISUALIZER_DETAILS = "../visualizer/data/benchmark-details.json";
 
-async function findLatestSummary(): Promise<string | null> {
+type LatestFiles = {
+  summary: string | null;
+  results: string | null;
+};
+
+async function findLatestFiles(): Promise<LatestFiles> {
   const suites = await readdir(RESULTS_DIR, { withFileTypes: true });
 
-  let latestFile: string | null = null;
+  let latestSummary: string | null = null;
+  let latestResults: string | null = null;
   let latestTime = 0;
 
   for (const suite of suites) {
@@ -32,35 +39,47 @@ async function findLatestSummary(): Promise<string | null> {
 
           if (fileStat.mtimeMs > latestTime) {
             latestTime = fileStat.mtimeMs;
-            latestFile = filePath;
+            latestSummary = filePath;
+            // find matching results file (same timestamp)
+            const timestamp = file.replace("summary-", "").replace(".json", "");
+            const resultsFile = `results-${timestamp}.json`;
+            if (files.includes(resultsFile)) {
+              latestResults = join(versionDir, resultsFile);
+            }
           }
         }
       }
     }
   }
 
-  return latestFile;
+  return { summary: latestSummary, results: latestResults };
 }
 
 async function main() {
-  console.log("searching for latest summary...");
+  console.log("searching for latest files...");
 
-  const latestSummary = await findLatestSummary();
+  const { summary, results } = await findLatestFiles();
 
-  if (!latestSummary) {
+  if (!summary) {
     console.error("no summary files found in results directory");
     process.exit(1);
   }
 
-  console.log(`found: ${latestSummary}`);
+  console.log(`found summary: ${summary}`);
 
-  const content = await readFile(latestSummary, "utf-8");
-  await writeFile(VISUALIZER_DATA, content);
-
+  const summaryContent = await readFile(summary, "utf-8");
+  await writeFile(VISUALIZER_DATA, summaryContent);
   console.log(`copied to: ${VISUALIZER_DATA}`);
 
+  if (results) {
+    console.log(`found results: ${results}`);
+    const resultsContent = await readFile(results, "utf-8");
+    await writeFile(VISUALIZER_DETAILS, resultsContent);
+    console.log(`copied to: ${VISUALIZER_DETAILS}`);
+  }
+
   // parse and show quick stats
-  const data = JSON.parse(content);
+  const data = JSON.parse(summaryContent);
   console.log("\nstats:");
   console.log(`  suite: ${data.metadata?.testSuite}`);
   console.log(`  version: ${data.metadata?.version}`);
